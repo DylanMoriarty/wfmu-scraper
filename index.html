@@ -88,6 +88,23 @@
 	.tiny-text {
 		font-size: 4px;
 	}
+
+	.warning {
+		margin-top: 1rem;
+		background-color: lightpink;
+		padding: 1rem 1.5rem;
+		width: 60%;
+	}
+
+	.warning p { margin: 0; }
+
+	.warning .dummy-url {
+		margin-top: 1rem;
+	}
+
+	.highlight {
+		border-bottom: 3px solid red;
+	}
 </style>
 
 <body>
@@ -100,6 +117,12 @@
 		<p>Enter the # for any show and get a list of who's commenting the most for that show</p>
 		<input type='text' id='lookupInput' maxlength='5' />
 		<button onClick="runScraper()">Fetch comments!</button>
+
+		<div class="warning hidden">
+			<p>Show id # should be 5 numbers long. To find the number, look at the URL for the show you want to analyze. For example:</p>
+
+			<p class="dummy-url">https://wfmu.org/playlists/shows/<span class="highlight">70751</span></p>
+		</div>
 
 		<div class="stats hidden">
 			<h4 class="showName"></h4>
@@ -131,9 +154,17 @@
 		const mainURL = 'https://www.wfmu.org/playlists/shows/'
 		const url = mainURL + showID
 
+		const warning = document.querySelector('.warning')
+		const table = document.getElementById("results")
+		const stats = document.querySelector('.stats')
+		table.innerHTML = ''
+
 		if (showID.length != 5) {
-			console.log('not long enough!')
+			warning.className = 'warning'
+			stats.className = 'stats hidden'
 			return
+		} else {
+			warning.className = 'warning hidden'
 		}
 
 		let proxy = 'https://cors-anywhere.herokuapp.com/' + url;
@@ -199,9 +230,6 @@
 
 				myArray = counted.sort(Comparator);
 
-				const table = document.getElementById("results")
-				table.innerHTML = ''
-
 				counted.forEach((c, i)=> {
 					const row = table.insertRow(i)
 
@@ -219,8 +247,6 @@
 				firstCell1.innerHTML = 'Commenter'
 				firstCell2.innerHTML = '# of comments'
 
-
-				const stats = document.querySelector('.stats')
 				stats.className = 'stats'
 
 				const totalElm = document.querySelector('.total-value')
