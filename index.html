@@ -1,0 +1,243 @@
+<!DOCTYPE html PUBLIC"-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<style>
+	#results {
+		border-collapse: collapse;
+		margin: 1rem 0.5rem;
+	}
+
+	.first-row {
+		border-bottom: 2px solid #ccc;
+	  border-spacing: 0 1em;
+		font-weight: 800;
+	}
+
+	td {
+		padding-right: 2rem;
+	}
+
+	dd, dt {
+		display: inline-block;
+		margin: 0;
+		padding: 0;
+	}
+
+	dt {
+		font-weight: 800;
+		margin-right: 2rem;
+	}
+
+	h1 {
+		margin-top: 0;
+		font-size: 18px;
+		margin-bottom: 0.75rem;
+	}
+
+	article {
+		margin: 2rem;
+		padding: 1rem;
+		background-color: white;
+		border: 1px solid black;
+	}
+
+	html {
+		font-family: Courier;
+		font-size: 14px;
+	}
+
+	.hidden {
+		display: none;
+	}
+
+	.background {
+		position: fixed;
+		display: block;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+		z-index: -1;
+		opacity: 1;
+		background-image: url('./seigaiha.png');
+		background-repeat: repeat;
+	}
+
+	.showName {
+		margin: 2rem 0 0.5rem;
+		font-size: 20px;
+	}
+
+	dl {
+		margin: 0 0 1.5rem 0;
+	}
+</style>
+
+<body>
+	<div class="background"></div>
+
+	<article>
+		<h1>WFMU Peanut Gallery Scraper</h1>
+		<img src="./scraping.gif"></img>
+
+		<p>Enter the # for any show and get a list of who's commenting the most for that show!</p>
+		<input type='text' id='lookupInput' maxlength='5' />
+		<button onClick="runScraper()">Fetch comments!</button>
+
+		<div class="stats hidden">
+			<h4 class="showName"></h4>
+			<dl>
+				<dd>Median # of comments:</dd>
+				<dt class="median-value"></dt>
+				<dd>Total # of comments:</dd>
+				<dt class="total-value"></dt>
+			</dl>
+		</div>
+
+		<table id="results"></table>
+	</article>
+</body>
+
+<script src="./jquery-3.4.1.min.js"></script>
+<script src="./axios.min.js"></script>
+
+<script>
+
+	function runScraper() {
+		const showID = document.querySelector('#lookupInput').value
+		const mainURL = 'https://www.wfmu.org/playlists/shows/'
+		const url = mainURL + showID
+
+		if (showID.length != 5) {
+			console.log('not long enough!')
+			return
+		}
+
+		let proxy = 'https://cors-anywhere.herokuapp.com/' + url;
+
+		var el = document.createElement( 'html' );
+
+		axios.get(proxy, { crossdomain: true })
+			.then(response => {
+
+				const getData = html => {
+					data = []
+
+					el.innerHTML = html
+
+					let commentList = $(el).find('#comments-table tr td .key')
+
+					commentList.each((i, elem) =>{
+						var whatItIs = $(elem)
+
+						data.push(whatItIs.text())
+					})
+
+					const showNameElm = document.querySelector('.showName')
+
+					// 
+					// Code to pull out the indvidual playlist name
+					//
+					// const name = $(el).find('.everything p')
+					// const filterForName = ($(name[1])
+					// 	.text()
+					// 	.replace(/\n/ig, 'b554c947-f1e3-4f3f-afb2-94750e8a175d')
+					// 	.split("b554c947-f1e3-4f3f-afb2-94750e8a175d")
+					// )
+					//
+					// showNameElm.innerHTML = filterForName[4]
+
+					const name = $(el).find('h2').text()
+
+					showNameElm.innerHTML = name
+
+					return data
+				}
+
+				const result = getData(response.data)
+				var cleanedData = []
+
+				result.forEach((r) => {
+					cleanedData.push(r.substring(1,r.length))
+				})
+
+				var countedData = counter(cleanedData)
+				var counted = []
+
+				for (var i = countedData[0].length - 1; i >= 0; i--) {
+					counted[i] = [countedData[0][i], countedData[1][i]]
+				}
+
+				function Comparator(a, b) {
+				 if (a[1] < b[1]) return 1;
+				 if (a[1] > b[1]) return -1;
+				 return 0;
+				}
+
+				myArray = counted.sort(Comparator);
+
+				const table = document.getElementById("results")
+				table.innerHTML = ''
+
+				counted.forEach((c, i)=> {
+					const row = table.insertRow(i)
+
+					const cell1 = row.insertCell(0)
+					const cell2 = row.insertCell(1)
+
+					cell1.innerHTML = c[0]
+					cell2.innerHTML = c[1]
+				})
+
+				const firstRow = table.insertRow(0)
+				firstRow.className = 'first-row'
+				const firstCell1 = firstRow.insertCell(0)
+				const firstCell2 = firstRow.insertCell(1)
+				firstCell1.innerHTML = 'Commenter'
+				firstCell2.innerHTML = '# of comments'
+
+
+				const stats = document.querySelector('.stats')
+				stats.className = 'stats'
+
+				const totalElm = document.querySelector('.total-value')
+				const medianElm = document.querySelector('.median-value')
+
+				medianElm.innerHTML = median(countedData[1])
+				totalElm.innerHTML = countedData[1].reduce((a, b) => a + b, 0)
+			})
+			.catch(error => {
+				console.log(error)
+			})
+
+
+
+		function median(arr) {
+		  const mid = Math.floor(arr.length / 2),
+		    nums = [...arr].sort((a, b) => a - b);
+		  return arr.length % 2 !== 0 ? nums[mid] : (nums[mid - 1] + nums[mid]) / 2;
+		}
+
+
+
+		function counter(arr) {
+		    var a = [], b = [], prev;
+
+		    arr.sort();
+		    for ( var i = 0; i < arr.length; i++ ) {
+		        if ( arr[i] !== prev ) {
+		            a.push(arr[i]);
+		            b.push(1);
+		        } else {
+		            b[b.length-1]++;
+		        }
+		        prev = arr[i];
+		    }
+
+		    return [a, b];
+		}
+	}
+</script>
+
+</html>
