@@ -127,10 +127,12 @@
 		<div class="stats hidden">
 			<h4 class="showName"></h4>
 			<dl>
-				<dd>Median # of comments:</dd>
-				<dt class="median-value"></dt>
+				<dd># of commenters:</dd>
+				<dt class="commenters-value"></dt>
 				<dd>Total # of comments:</dd>
 				<dt class="total-value"></dt>
+				<dd>Median # of comments:</dd>
+				<dt class="median-value"></dt>
 			</dl>
 		</div>
 
@@ -251,9 +253,11 @@
 
 				const totalElm = document.querySelector('.total-value')
 				const medianElm = document.querySelector('.median-value')
+				const commenterElm = document.querySelector('.commenters-value')
 
 				medianElm.innerHTML = median(countedData[1])
 				totalElm.innerHTML = countedData[1].reduce((a, b) => a + b, 0)
+				commenterElm.innerHTML = countedData[0].length
 			})
 			.catch(error => {
 				console.log(error)
